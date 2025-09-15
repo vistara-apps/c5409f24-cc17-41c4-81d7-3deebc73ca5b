@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
   baseURL: "https://openrouter.ai/api/v1",
   dangerouslyAllowBrowser: false,
 })
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       quality: "standard",
     })
 
-    const imageUrl = response.data[0]?.url
+    const imageUrl = response.data?.[0]?.url
 
     if (!imageUrl) {
       throw new Error('No image generated')

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Loader2, Sparkles } from 'lucide-react'
-import type { Artwork } from '../app/page'
+import type { Artwork } from './EmotiArtApp'
 
 interface ArtDisplayProps {
   artwork: Artwork | null
