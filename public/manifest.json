@@ -1,0 +1,14 @@
+{
+  "name": "EmotiArt",
+  "description": "EmotiArt is a Base Mini App built with Zara.",
+  "image": "https://dummyimage.com/1200x628/0a0b0d/ffffff.png&text=OG",
+  "external_url": "https://c5409f24-cc17-41c4-81d7-3deebc73ca5b.vercel.app",
+  "properties": {
+    "app": {
+      "name": "EmotiArt",
+      "description": "EmotiArt is a Base Mini App built with Zara.",
+      "url": "https://c5409f24-cc17-41c4-81d7-3deebc73ca5b.vercel.app",
+      "icon": "https://0co.to/images/zara-2.png"
+    }
+  }
+}
