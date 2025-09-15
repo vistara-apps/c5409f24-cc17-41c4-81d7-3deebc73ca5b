@@ -52,7 +52,8 @@ app/
 ├── providers.tsx      # MiniKit and OnchainKit providers
 ├── globals.css        # Global styles and design tokens
 └── api/
-    └── generate-art/  # AI art generation endpoint
+    ├── generate-art/  # AI art generation endpoint
+    └── mint-nft/      # NFT minting endpoint
 
 components/
 ├── AppShell.tsx       # Main app container
@@ -60,6 +61,10 @@ components/
 ├── StyleSelector.tsx  # Art style selection
 ├── ArtDisplay.tsx     # Generated art display
 └── ActionButtons.tsx  # Mint, share, try again actions
+
+contracts/
+├── EmotiArtNFT.sol    # ERC721 smart contract
+└── EmotiArtNFT.json   # Contract ABI
 
 lib/
 ├── types.ts          # TypeScript type definitions
@@ -78,16 +83,63 @@ The app uses a custom design system with:
 
 ## API Integration
 
-### Art Generation
+### Art Generation (`/api/generate-art`)
 Uses OpenAI's DALL-E API to generate unique artwork based on:
 - User's emotional input
 - Selected art style
 - Custom prompts for each style variant
 
+**Request:**
+```json
+{
+  "emotion": "happy",
+  "style": "vibrant-abstract",
+  "userId": "fid_or_wallet_address"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "unique_artwork_id",
+  "emotion": "happy",
+  "style": "vibrant-abstract",
+  "imageUrl": "https://...",
+  "isNft": false,
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "userId": "fid_or_wallet_address"
+}
+```
+
+### NFT Minting (`/api/mint-nft`)
+Mints generated artwork as NFTs on the Base network.
+
+**Request:**
+```json
+{
+  "artworkId": "unique_artwork_id",
+  "emotion": "happy",
+  "style": "vibrant-abstract",
+  "imageUrl": "https://...",
+  "recipientAddress": "0x...",
+  "tokenURI": "data:application/json;base64,..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "txHash": "0x...",
+  "tokenId": "1"
+}
+```
+
 ### Blockchain Integration
 - **Base Network**: Low-cost NFT minting
 - **OnchainKit**: Wallet connection and transactions
 - **MiniKit**: Farcaster integration and social features
+- **Smart Contract**: Custom ERC721 for EmotiArt NFTs
 
 ## Development
 
@@ -103,6 +155,33 @@ Uses OpenAI's DALL-E API to generate unique artwork based on:
 
 ## Deployment
 
+### Smart Contract Deployment
+
+1. **Deploy the EmotiArtNFT contract to Base**:
+   - Use [Remix IDE](https://remix.ethereum.org/) to deploy `contracts/EmotiArtNFT.sol`
+   - Or use Hardhat/Foundry with the provided deployment script
+   - Target network: Base Mainnet
+   - Required: Some ETH for gas fees
+
+2. **Alternative deployment methods**:
+```bash
+# Using Thirdweb
+npx thirdweb deploy
+
+# Using Remix IDE (recommended for simplicity)
+# 1. Go to remix.ethereum.org
+# 2. Load contracts/EmotiArtNFT.sol
+# 3. Compile and deploy to Base network
+```
+
+2. **Update environment variables** with the deployed contract address:
+```bash
+NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x_your_deployed_contract_address
+NFT_MINTER_PRIVATE_KEY=your_wallet_private_key
+```
+
+### Application Deployment
+
 1. **Build the application**:
 ```bash
 npm run build
@@ -110,9 +189,20 @@ npm run build
 
 2. **Deploy to Vercel or similar platform**
 
-3. **Configure environment variables** in production
+3. **Configure environment variables** in production:
+- `NEXT_PUBLIC_ONCHAINKIT_API_KEY`
+- `NEXT_PUBLIC_MINIKIT_API_KEY`
+- `OPENAI_API_KEY`
+- `NEXT_PUBLIC_NFT_CONTRACT_ADDRESS`
+- `NFT_MINTER_PRIVATE_KEY`
 
 4. **Test in Base App** to ensure Mini App functionality works correctly
+
+### Farcaster Frame Setup
+
+1. **Create a Farcaster frame** pointing to your deployed app URL
+2. **Configure frame metadata** in your app's meta tags
+3. **Test frame functionality** in Farcaster clients
 
 ## Contributing
 

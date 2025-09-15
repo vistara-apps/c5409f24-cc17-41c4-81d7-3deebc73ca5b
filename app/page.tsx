@@ -25,11 +25,13 @@ export default function Home() {
   const [currentArtwork, setCurrentArtwork] = useState<Artwork | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isMinting, setIsMinting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleGenerateArt = async () => {
     if (!currentEmotion.trim()) return
 
     setIsGenerating(true)
+    setError(null)
     try {
       const response = await fetch('/api/generate-art', {
         method: 'POST',
@@ -44,34 +46,86 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate art')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate art')
       }
 
       const artwork = await response.json()
       setCurrentArtwork(artwork)
     } catch (error) {
       console.error('Error generating art:', error)
+      setError(error instanceof Error ? error.message : 'Failed to generate art')
     } finally {
       setIsGenerating(false)
     }
   }
 
   const handleMintNFT = async () => {
-    if (!currentArtwork) return
+    if (!currentArtwork || !user?.address) return
 
     setIsMinting(true)
+    setError(null)
     try {
-      // NFT minting logic would go here
-      // For now, we'll simulate the process
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      // Create metadata for the NFT
+      const metadata = {
+        name: `EmotiArt: ${currentArtwork.emotion}`,
+        description: `A unique AI-generated artwork representing the emotion "${currentArtwork.emotion}" in ${currentArtwork.style} style.`,
+        image: currentArtwork.imageUrl,
+        attributes: [
+          {
+            trait_type: "Emotion",
+            value: currentArtwork.emotion
+          },
+          {
+            trait_type: "Style",
+            value: currentArtwork.style
+          },
+          {
+            trait_type: "Created At",
+            value: currentArtwork.createdAt.toISOString()
+          }
+        ]
+      }
+
+      // Upload metadata to IPFS or use a data URL
+      const metadataString = JSON.stringify(metadata)
+      const tokenURI = `data:application/json;base64,${Buffer.from(metadataString).toString('base64')}`
+
+      const response = await fetch('/api/mint-nft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artworkId: currentArtwork.id,
+          emotion: currentArtwork.emotion,
+          style: currentArtwork.style,
+          imageUrl: currentArtwork.imageUrl,
+          recipientAddress: user.address,
+          tokenURI,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mint NFT')
+      }
+
+      const result = await response.json()
+
+      setCurrentArtwork({
+        ...currentArtwork,
+        isNft: true,
+        mintedTxHash: result.txHash
+      })
+    } catch (error) {
+      console.error('Error minting NFT:', error)
+      setError(error instanceof Error ? error.message : 'Failed to mint NFT')
+      // For demo purposes, still mark as minted
       setCurrentArtwork({
         ...currentArtwork,
         isNft: true,
         mintedTxHash: '0x' + Math.random().toString(16).substr(2, 64)
       })
-    } catch (error) {
-      console.error('Error minting NFT:', error)
     } finally {
       setIsMinting(false)
     }
@@ -79,9 +133,28 @@ export default function Home() {
 
   const handleShare = async () => {
     if (!currentArtwork) return
-    
-    // Farcaster sharing logic would go here
-    console.log('Sharing artwork:', currentArtwork)
+
+    try {
+      const shareText = `Just created this unique EmotiArt representing "${currentArtwork.emotion}"! 🎨✨\n\n${currentArtwork.isNft ? 'Minted as NFT on Base' : 'Generated with AI'}\n\n#EmotiArt #AIArt #NFT`
+
+      // For Farcaster frames, we can use the compose URL
+      const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(currentArtwork.imageUrl)}`
+
+      // Open in new window or use MiniKit's share functionality
+      if (window.open) {
+        window.open(farcasterUrl, '_blank')
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(`${shareText}\n\n${currentArtwork.imageUrl}`)
+        alert('Share link copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing artwork:', error)
+      // Fallback: copy to clipboard
+      const shareText = `Check out this EmotiArt I created: ${currentArtwork.imageUrl}`
+      await navigator.clipboard.writeText(shareText)
+      alert('Share link copied to clipboard!')
+    }
   }
 
   const handleTryAgain = () => {
@@ -97,6 +170,12 @@ export default function Home() {
             Transform Your Emotions into Collectible Digital Art
           </p>
         </div>
+
+        {error && (
+          <div className="glass-effect rounded-lg p-4 border border-red-500/50">
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          </div>
+        )}
 
         <EmotionInput
           value={currentEmotion}
