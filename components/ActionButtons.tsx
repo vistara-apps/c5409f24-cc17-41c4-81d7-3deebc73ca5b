@@ -1,7 +1,7 @@
 'use client'
 
 import { Share2, Coins, RotateCcw } from 'lucide-react'
-import type { Artwork } from '../app/page'
+import type { Artwork } from './EmotiArtApp'
 
 interface ActionButtonsProps {
   artwork: Artwork
